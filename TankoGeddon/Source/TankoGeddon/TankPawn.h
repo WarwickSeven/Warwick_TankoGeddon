@@ -15,7 +15,7 @@ class TANKOGEDDON_API ATankPawn : public APawn
 public:
 	ATankPawn();
 	void MoveForward(float Value);
-
+	void MoveRight(float Value);
 	virtual void Tick(float DeltaSeconds) override; 
 protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
@@ -34,5 +34,8 @@ protected:
 	float MoveSpeed = 100.0f;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Movement")
-	float TargetAxisValue = 0.0f;
+	float TargetForwardAxisValue = 0.0f;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Movement")
+	float TargetRightAxisValue = 0.0f;
 };

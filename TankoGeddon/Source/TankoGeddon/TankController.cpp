@@ -10,6 +10,7 @@ void ATankController::SetupInputComponent()
 	Super::SetupInputComponent();
 
 	InputComponent->BindAxis("MoveForward", this, &ATankController::MoveForward);
+	InputComponent->BindAxis("MoveRight", this, &ATankController::MoveRight);
 }
 
 void ATankController::SetPawn(APawn* InPawn)
@@ -22,4 +23,10 @@ void ATankController::MoveForward(float Value)
 {
 	if (TankPawn)
 	TankPawn->MoveForward(Value);
+}
+
+void ATankController::MoveRight(float Value)
+{
+	if (TankPawn)
+		TankPawn->MoveRight(Value);
 }
