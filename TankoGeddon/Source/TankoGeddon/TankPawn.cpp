@@ -3,12 +3,16 @@
 
 #include "TankPawn.h"
 #include "Components/StaticMeshComponent.h"
-#include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "TankController.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Cannon.h"
+#include "Components/ArrowComponent.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(TankLog, All, All);
+DEFINE_LOG_CATEGORY(TankLog);
 
-// Sets default values
 ATankPawn::ATankPawn()
 {
  	PrimaryActorTick.bCanEverTick = true;
@@ -28,6 +32,9 @@ ATankPawn::ATankPawn()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
+
+	CannonSetupPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("CannonSetupPoint"));
+	CannonSetupPoint->SetupAttachment(TurretMesh);
 }
 
 void ATankPawn::MoveForward(float Value)
@@ -59,6 +66,21 @@ void ATankPawn::AlternateFire()
 	{
 		AlternateCannon->AlternateFire();
 	}	
+}
+
+void ATankPawn::IncreaseAmmo(const int IncreaseAmmoValue)
+{
+	CurrentAmmo += IncreaseAmmoValue;
+	if (CurrentAmmo > MaxAmmo)
+	{
+		CurrentAmmo = MaxAmmo;
+	}
+}
+
+void ATankPawn::DecreaseAmmo(const int DecreaseAmmoValue)
+{
+	if (DecreaseAmmoValue > CurrentAmmo) return;
+	CurrentAmmo -= DecreaseAmmoValue;
 }
 
 void ATankPawn::Tick(float DeltaSeconds)
@@ -103,12 +125,12 @@ void ATankPawn::BeginPlay()
 
 	TankController = Cast<ATankController>(GetController());
 
-	SetupCannon();
+	SetupCannon(MainCannonClass);
 }
 
-void ATankPawn::SetupCannon()
+void ATankPawn::SetupCannon(TSubclassOf<ACannon> newCannonClass)
 {
-	if(!MainCannonClass)
+	if(!newCannonClass)
 	{
 		return; 
 	}
@@ -116,12 +138,13 @@ void ATankPawn::SetupCannon()
 	{
 		Cannon->Destroy();
 	}
+		
 	FActorSpawnParameters params;
 	params.Instigator = this;
 	params.Owner = this;
 	
-	Cannon = GetWorld()->SpawnActor<ACannon>(MainCannonClass, params);
-	Cannon->AttachToComponent(TurretMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	Cannon = GetWorld()->SpawnActor<ACannon>(newCannonClass, params);
+	Cannon->AttachToComponent(CannonSetupPoint, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	
 	if(!AlternateCannonClass)
 	{
@@ -133,6 +156,6 @@ void ATankPawn::SetupCannon()
 	}
 	
 	AlternateCannon = GetWorld()->SpawnActor<ACannon>(AlternateCannonClass, params);
-	AlternateCannon->AttachToComponent(TurretMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	AlternateCannon->AttachToComponent(CannonSetupPoint, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 

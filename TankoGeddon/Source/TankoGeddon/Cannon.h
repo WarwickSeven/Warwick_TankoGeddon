@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameStruct.h"
 #include "GameFramework/Actor.h"
+#include "GameStruct.h"
+#include "TankPawn.h"
 #include "Cannon.generated.h"
 
+class AProjectilePool;
 UCLASS()
 class TANKOGEDDON_API ACannon : public AActor
 {
@@ -18,7 +20,12 @@ public:
 	void AlternateFire();
 	void MainReload();
 	void AlternateReload();
+
+	void CreateProjectilePool();
+
 protected:
+	virtual void BeginPlay() override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	class UStaticMeshComponent* CannonMesh;
 
@@ -38,13 +45,23 @@ protected:
 	float BurstFireInterval = 0.2f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	int ProjectileAmmo = 5;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	int TraceAmmo = 3;
+	float FireRange = 1000;
 	
 	FTimerHandle ReloadTimer;
 	FTimerHandle BurstFireTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Projectile")
+	TSubclassOf<class AProjectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	TSubclassOf<AProjectilePool> ProjectilePoolClass;
+
+	UPROPERTY()
+	AProjectilePool* ProjectilePool;
+	
+	UPROPERTY()
+	ATankPawn* TankPawn;
+	
 private:
 	bool bMainCanFire = true;
 	bool bAlternateCanFire = true;

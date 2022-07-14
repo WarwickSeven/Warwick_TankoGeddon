@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Cannon.h"
-#include "TankController.h"
 #include "GameFramework/Pawn.h"
+#include "GameStruct.h"
 #include "TankPawn.generated.h"
+
 
 class UStaticMeshComponent;
 class ACannon;
@@ -22,9 +22,15 @@ public:
 	void MoveRight(float Value);
 	void RotateRight(float Value);
 
+	void SetupCannon(TSubclassOf<ACannon> newCannonClass);
 	void Fire();
 	void AlternateFire();
 
+	void IncreaseAmmo(int IncreaseAmmoValue);
+	void DecreaseAmmo(int DecreaseAmmoValue);
+	int GetAmmoValue() const { return CurrentAmmo; }
+	int GetMaxAmmoValue() const { return MaxAmmo; }
+	
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 protected:
@@ -41,11 +47,20 @@ protected:
 	class UCameraComponent* Camera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
+	class UArrowComponent* CannonSetupPoint;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
 	TSubclassOf<ACannon> MainCannonClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
 	TSubclassOf<ACannon> AlternateCannonClass;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
+	int CurrentAmmo = 120;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
+	int MaxAmmo = 120;
+
 	UPROPERTY()
 	ACannon* Cannon;
 
@@ -67,8 +82,6 @@ protected:
 	UPROPERTY()
 	class ATankController* TankController;
 
-	void SetupCannon();
-		 
 private:	
 	float TargetForwardAxisValue = 0.0f;
 	float TargetRightAxisValue = 0.0f;
