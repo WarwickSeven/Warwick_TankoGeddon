@@ -21,8 +21,8 @@ public:
 	void MainReload();
 	void AlternateReload();
 
+	bool IsReadyToFire() const { return bMainCanFire; };	
 	void CreateProjectilePool();
-
 protected:
 	virtual void BeginPlay() override;
 	
