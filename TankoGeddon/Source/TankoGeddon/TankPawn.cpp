@@ -8,6 +8,7 @@
 #include "TankController.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Cannon.h"
+#include "HealthComponent.h"
 #include "Components/ArrowComponent.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(TankLog, All, All);
@@ -35,6 +36,11 @@ ATankPawn::ATankPawn()
 
 	CannonSetupPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("CannonSetupPoint"));
 	CannonSetupPoint->SetupAttachment(TurretMesh);
+
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	HealthComponent->OnDie.AddUObject(this, &ATankPawn::Die);
+	HealthComponent->OnHealthChanged.AddUObject(this, &ATankPawn::DamageTaked);
+	
 }
 
 void ATankPawn::MoveForward(float Value)
@@ -126,6 +132,23 @@ void ATankPawn::BeginPlay()
 	TankController = Cast<ATankController>(GetController());
 
 	SetupCannon(MainCannonClass);
+
+	CurrentAmmo = MaxAmmo;
+}
+
+void ATankPawn::TakeDamage(FDamageData DamageData)
+{
+	HealthComponent->TakeDamage(DamageData);
+}
+
+void ATankPawn::Die()
+{
+	Destroy();
+}
+
+void ATankPawn::DamageTaked(float DamageValue)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Tank %s take Damage: %f, Health: %f"), *GetName(), DamageValue, HealthComponent->GetHealth());
 }
 
 void ATankPawn::SetupCannon(TSubclassOf<ACannon> newCannonClass)

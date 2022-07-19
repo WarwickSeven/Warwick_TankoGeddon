@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DamageTaker.h"
 #include "GameFramework/Pawn.h"
 #include "GameStruct.h"
 #include "TankPawn.generated.h"
@@ -11,7 +12,7 @@
 class UStaticMeshComponent;
 class ACannon;
 UCLASS()
-class TANKOGEDDON_API ATankPawn : public APawn
+class TANKOGEDDON_API ATankPawn : public APawn, public IDamageTaker
 {
 	GENERATED_BODY()
 	
@@ -33,6 +34,16 @@ public:
 	
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
+
+	virtual void TakeDamage(FDamageData DamageData) override;
+
+	UFUNCTION()
+	void Die();
+
+	UFUNCTION()
+	void DamageTaked(float DamageValue);
+	
+	
 protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
 	UStaticMeshComponent* BodyMesh;
@@ -56,11 +67,13 @@ protected:
 	TSubclassOf<ACannon> AlternateCannonClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
-	int CurrentAmmo = 120;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
 	int MaxAmmo = 120;
 
+	int CurrentAmmo;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	class UHealthComponent* HealthComponent;
+	
 	UPROPERTY()
 	ACannon* Cannon;
 

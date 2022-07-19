@@ -262,5 +262,3 @@ void ACannon::BeginPlay()
 	CreateProjectilePool();
 	TankPawn = Cast<ATankPawn>(GetOwner());
 }
-
-
