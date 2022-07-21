@@ -3,16 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DamageTaker.h"
-#include "GameFramework/Pawn.h"
-#include "GameStruct.h"
+#include "MachinePawn.h"
 #include "TankPawn.generated.h"
 
-
-class UStaticMeshComponent;
-class ACannon;
 UCLASS()
-class TANKOGEDDON_API ATankPawn : public APawn, public IDamageTaker
+class TANKOGEDDON_API ATankPawn final : public AMachinePawn
 {
 	GENERATED_BODY()
 	
@@ -23,63 +18,16 @@ public:
 	void MoveRight(float Value);
 	void RotateRight(float Value);
 
-	void SetupCannon(TSubclassOf<ACannon> newCannonClass);
-	void Fire();
-	void AlternateFire();
-
-	void IncreaseAmmo(int IncreaseAmmoValue);
-	void DecreaseAmmo(int DecreaseAmmoValue);
-	int GetAmmoValue() const { return CurrentAmmo; }
-	int GetMaxAmmoValue() const { return MaxAmmo; }
-	
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void BeginPlay() override;
-
-	virtual void TakeDamage(FDamageData DamageData) override;
-
-	UFUNCTION()
-	void Die();
-
-	UFUNCTION()
-	void DamageTaked(float DamageValue);
-	
-	
 protected:
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
-	UStaticMeshComponent* BodyMesh;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
-	UStaticMeshComponent* TurretMesh;
-
+	virtual void BeginPlay() override;
+	
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
 	class USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category="Components")
 	class UCameraComponent* Camera;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
-	class UArrowComponent* CannonSetupPoint;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
-	TSubclassOf<ACannon> MainCannonClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
-	TSubclassOf<ACannon> AlternateCannonClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turret | Components")
-	int MaxAmmo = 120;
-
-	int CurrentAmmo;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	class UHealthComponent* HealthComponent;
-	
-	UPROPERTY()
-	ACannon* Cannon;
-
-	UPROPERTY()
-	ACannon* AlternateCannon;
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Movement")
 	float MoveSpeed = 10.0f;
 

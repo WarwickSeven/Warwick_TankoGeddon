@@ -2,33 +2,111 @@
 
 
 #include "MachinePawn.h"
+#include "Cannon.h"
+#include "HealthComponent.h"
+#include "Components/ArrowComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
 
-// Sets default values
 AMachinePawn::AMachinePawn()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
+	RootComponent = BodyMesh;
 
+	TurretMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TurretMesh"));
+	TurretMesh->SetupAttachment(BodyMesh);
+
+	CannonSetupPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("CannonSetupPoint"));
+	CannonSetupPoint->SetupAttachment(TurretMesh);
+
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollider"));
+	BoxComponent->SetupAttachment(BodyMesh);
+
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	HealthComponent->OnDie.AddUObject(this, &AMachinePawn::Die);
+	HealthComponent->OnHealthChanged.AddUObject(this, &AMachinePawn::DamageTaked);
 }
 
-// Called when the game starts or when spawned
+void AMachinePawn::TakeDamage(const FDamageData DamageData)
+{
+	HealthComponent->TakeDamage(DamageData);
+}
+
+void AMachinePawn::SetupCannon(const TSubclassOf<ACannon> NewCannonClass)
+{
+	if(!NewCannonClass)
+	{
+		return; 
+	}
+	if(Cannon)
+	{
+		Cannon->Destroy();
+	}
+		
+	FActorSpawnParameters Params;
+	Params.Instigator = this;
+	Params.Owner = this;
+	
+	Cannon = GetWorld()->SpawnActor<ACannon>(NewCannonClass, Params);
+	Cannon->SetOwner(this);
+	Cannon->ScoreChanged.AddUObject(this, &AMachinePawn::ShowScore);
+	
+	Cannon->AttachToComponent(CannonSetupPoint, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	
+	if(!AlternateCannonClass)
+	{
+		return; 
+	}
+	if(AlternateCannon)
+	{
+		AlternateCannon->Destroy();
+	}
+	
+	AlternateCannon = GetWorld()->SpawnActor<ACannon>(AlternateCannonClass, Params);
+	AlternateCannon->AttachToComponent(CannonSetupPoint, FAttachmentTransformRules::SnapToTargetIncludingScale);
+}
+
+void AMachinePawn::Fire() const
+{
+	if (Cannon)
+		Cannon->Fire();
+}
+
+void AMachinePawn::AlternateFire() const
+{
+	if (AlternateCannon)
+	{
+		AlternateCannon->AlternateFire();
+	}	
+}
+
+float AMachinePawn::GetPoints()
+{
+	return ScoreValue;
+}
+
+void AMachinePawn::ShowScore(const float Value)
+{
+	Score += Value;
+	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, FString::Printf(TEXT("Score: %f"), Score));
+}
+
 void AMachinePawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	SetupCannon(CannonClass);
 }
 
-// Called every frame
-void AMachinePawn::Tick(float DeltaTime)
+void AMachinePawn::Die()
 {
-	Super::Tick(DeltaTime);
-
+	if (Cannon)
+	{
+		Cannon->Destroy();
+	}
+	Destroy();
 }
 
-// Called to bind functionality to input
-void AMachinePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AMachinePawn::DamageTaked(const float DamageValue) const
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	UE_LOG(LogTemp, Warning, TEXT("Turret %s take Damage: %f, Health: %f"), *GetName(), DamageValue, HealthComponent->GetHealth());
 }
-

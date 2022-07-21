@@ -2,11 +2,11 @@
 
 
 #include "Projectile.h"
-
 #include "DamageTaker.h"
+#include "Scorable.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameStruct.h"
+//#include "GameStruct.h"
 
 AProjectile::AProjectile()
 {
@@ -31,42 +31,53 @@ void AProjectile::Deactivate()
 {
 	bIsActivation = false;
 	SetActorEnableCollision(false);
-	SetActorLocation(FVector(0.0f, 0.0f, -50.0f));
+	SetActorLocation(FVector(0.0f, 0.0f, -500.0f));
 	GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
 	GetWorld()->GetTimerManager().ClearTimer(MoveTimer);
 }
 
 void AProjectile::Move()
 {
-	FVector nextPosition = GetActorLocation() + GetActorForwardVector() * MoveSpeed * MoveRate;
-	SetActorLocation(nextPosition);
+	const FVector NextPosition = GetActorLocation() + GetActorForwardVector() * MoveSpeed * MoveRate;
+	SetActorLocation(NextPosition);
 }
 
-void AProjectile::OnMeshOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AProjectile::OnMeshOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Projectile collided with %s, collided with component %s"), *OtherActor->GetName(), *OverlappedComp->GetName());
 
-	AActor* owner = GetOwner();
-	AActor* ownerByOwner = owner != nullptr ? owner->GetOwner() : nullptr;
+	const AActor* ProjectileOwner = GetOwner();
+	const AActor* OwnerByOwner = ProjectileOwner != nullptr ? ProjectileOwner->GetOwner() : nullptr; 
 
-	if (OtherActor != owner && OtherActor != ownerByOwner)
+	if (OtherActor != ProjectileOwner && OtherActor != OwnerByOwner)
 	{
-		IDamageTaker* damageTakerActor = Cast<IDamageTaker>(OtherActor);
-		if (damageTakerActor)
+		IDamageTaker* DamageTakerActor = Cast<IDamageTaker>(OtherActor);
+		IScorable* ScorableActor = Cast<IScorable>(OtherActor);
+
+		float ScoreValue = 0.0f;
+
+		if(ScorableActor)
 		{
-			FDamageData damageData;
-			damageData.DamageValue = Damage;
-			damageData.Instigator = owner;
-			damageData.DamageMaker = this;
-
-			damageTakerActor->TakeDamage(damageData);
+			ScoreValue = ScorableActor->GetPoints();	
 		}
-	}
-	else
-	{
-		OtherActor->Destroy();	
+		
+		if (DamageTakerActor)
+		{
+			FDamageData DamageData;
+			DamageData.DamageValue = Damage;
+			DamageData.Instigator = Owner;
+			DamageData.DamageMaker = this;
+
+			DamageTakerActor->TakeDamage(DamageData);
+
+			if (OtherActor->IsActorBeingDestroyed() && ScoreValue != 0.0f)
+			{
+				if (OnKilled.IsBound())
+				{
+					OnKilled.Broadcast(ScoreValue);
+				}
+			}
+		}
 	}
 	Deactivate();
 } 
-

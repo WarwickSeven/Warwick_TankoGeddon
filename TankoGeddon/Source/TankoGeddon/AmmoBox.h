@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "Cannon.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "AmmoBox.generated.h"
+
 
 UCLASS()
 class TANKOGEDDON_API AAmmoBox : public AActor
@@ -14,6 +16,9 @@ class TANKOGEDDON_API AAmmoBox : public AActor
 public:
 	AAmmoBox();
 
+	UPROPERTY()
+	ACannon* Cannon;
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Component")
 	class UStaticMeshComponent* AmmoMesh;

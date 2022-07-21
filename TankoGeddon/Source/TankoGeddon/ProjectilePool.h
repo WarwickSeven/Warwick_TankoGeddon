@@ -8,12 +8,12 @@
 
 class AProjectile;
 UCLASS()
-class TANKOGEDDON_API AProjectilePool : public AActor
+class TANKOGEDDON_API AProjectilePool final : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	void GetProjectile(FVector spawnLocation, FRotator spawnRotation);
+	void GetProjectile(FVector SpawnLocation, FRotator SpawnRotation);
 
 protected:
 	virtual void BeginPlay() override;

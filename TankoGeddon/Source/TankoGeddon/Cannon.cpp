@@ -32,16 +32,18 @@ void ACannon::BurstFire()
 		bMainCanFire = true;
 		bAlternateCanFire = true;
 		CurrentShot = 0;
-		TankPawn->DecreaseAmmo(3);
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Ammo: %d"), TankPawn->GetAmmoValue()));
+		CurrentAmmo -= 3;
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Ammo: %i"), CurrentAmmo));
 		return;
 	}
 	CurrentShot++;
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Burst Fire Projectile")));
-	AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
-	if (projectile)
+	AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
+	if (Projectile)
 	{
-		projectile->Start();
+		Projectile->OnKilled.AddUObject(this, &ACannon::AddScore);
+		Projectile->SetOwner(this);
+		Projectile->Start();
 	}
 	GetWorld()->GetTimerManager().SetTimer(BurstFireTimer, this, &ACannon::BurstFire, BurstFireInterval, false);
 }
@@ -55,85 +57,103 @@ void ACannon::Fire()
 
 	if(CannonType==ECannonType::FireProjectile)
 	{
-		if(TankPawn->GetAmmoValue()==0)
-		{
+		if(CurrentAmmo==0)
+			{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Projectile Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(1);
+		CurrentAmmo--;
 		bMainCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire projectile. Ammo left: %d"), TankPawn->GetAmmoValue()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire projectile. Ammo left: %i"), CurrentAmmo));
 		if (ProjectilePool)
 		{
 			ProjectilePool->GetProjectile(ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
 		}
 		else
 		{
-			AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
-			if (projectile)
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
+			if (Projectile)
 			{
-				projectile->Start();
+				Projectile->OnKilled.AddUObject(this, &ACannon::AddScore);
+				Projectile->SetOwner(this);
+				Projectile->Start();
 			}
 		}
 	}
 	else if (CannonType==ECannonType::FireSPProjectile)
 	{
-		if(TankPawn->GetAmmoValue() < 2)
+		if(CurrentAmmo < 2)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For SP-Projectile Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(2);
+		CurrentAmmo -=2;
 		bMainCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire SP-projectile. Ammo left: %d"), TankPawn->GetAmmoValue()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire SP-projectile. Ammo left: %i"), CurrentAmmo));
 		if (ProjectilePool)
 		{
 			ProjectilePool->GetProjectile(ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
 		}
 		else
 		{
-			AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
-			if (projectile)
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
+			if (Projectile)
 			{
-				projectile->Start();
+				Projectile->OnKilled.AddUObject(this, &ACannon::AddScore);
+				Projectile->SetOwner(this);
+				Projectile->Start();
 			}
 		}
 	}
 	else if (CannonType==ECannonType::FireTrace)
 	{
-		if(TankPawn->GetAmmoValue() < 10)
+		if(CurrentAmmo < 10)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Trace Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(10);
+		CurrentAmmo -= 10;
 		bMainCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire trace! Ammo left: %d"), TankPawn->GetAmmoValue()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire trace! Ammo left: %i"), CurrentAmmo));
 
-		FHitResult hitResult;
-		FCollisionQueryParams traceParams = FCollisionQueryParams(FName(TEXT("FireTrace")), true, this);
-		traceParams.bTraceComplex = true;
-		traceParams.bReturnPhysicalMaterial = false;
+		FHitResult HitResult;
+		FCollisionQueryParams TraceParams = FCollisionQueryParams(FName(TEXT("FireTrace")), true, this);
+		TraceParams.bTraceComplex = true;
+		TraceParams.bReturnPhysicalMaterial = false;
 
 		FVector StartTrace = ProjectileSpawnPoint->GetComponentLocation();
 		FVector EndTrace = StartTrace + ProjectileSpawnPoint->GetForwardVector() * FireRange;
 
-		if (GetWorld()->LineTraceSingleByChannel(hitResult, StartTrace, EndTrace, ECollisionChannel::ECC_Visibility, traceParams))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_Visibility, TraceParams))
 		{
-			DrawDebugLine(GetWorld(), StartTrace, hitResult.Location, FColor::Red, false, 0.5f, 0, 5);
-			if (hitResult.GetActor())
+			DrawDebugLine(GetWorld(), StartTrace, HitResult.Location, FColor::Red, false, 0.5f, 0, 5);
+			if (HitResult.GetActor())
 			{
-				hitResult.GetActor()->Destroy();
+				AActor* TraceOwner = GetOwner();
+				AActor* OwnerByOwner = TraceOwner != nullptr ? TraceOwner->GetOwner() : nullptr;
+
+				if (HitResult.GetActor() != TraceOwner && HitResult.GetActor() != OwnerByOwner)
+				{
+					if (IDamageTaker* DamageTakerActor = Cast<IDamageTaker>(HitResult.GetActor()))
+					{
+						FDamageData DamageData;
+						DamageData.DamageValue = TraceDamage;
+						DamageData.Instigator = TraceOwner;
+						DamageData.DamageMaker = this;
+
+						DamageTakerActor->TakeDamage(DamageData);
+					}
+				}
 			}
-		}
-		else
-		{
-			DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Purple, false, 0.5f, 0, 5);
+			else
+			{
+				DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Purple, false, 0.5f, 0, 5);
+			}
 		}
 	}
 	else if (CannonType==ECannonType::FireMultiProjectile)
 	{
-		if(TankPawn->GetAmmoValue() < 3)
+		if(CurrentAmmo < 3)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Burst Fire")));
 			return;
@@ -157,85 +177,104 @@ void ACannon::AlternateFire()
 
 	if(CannonType==ECannonType::FireProjectile)
 	{
-		if(TankPawn->GetAmmoValue()==0)
+		if(CurrentAmmo==0)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Projectile Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(1);
+		CurrentAmmo--;
 		bAlternateCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire projectile. Ammo left: %d"), TankPawn->GetAmmoValue()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire projectile. Ammo left: %i"), CurrentAmmo));
 		if (ProjectilePool)
 		{
 			ProjectilePool->GetProjectile(ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
 		}
 		else
 		{
-			AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
-			if (projectile)
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
+			if (Projectile)
 			{
-				projectile->Start();
+				Projectile->OnKilled.AddUObject(this, &ACannon::AddScore);
+				Projectile->SetOwner(this);
+				Projectile->Start();
 			}
 		}
 	}
 	else if (CannonType==ECannonType::FireSPProjectile)
 	{
-		if(TankPawn->GetAmmoValue() < 2)
+		if(CurrentAmmo < 2)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For SP-Projectile Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(2);
+		CurrentAmmo -= 2;
 		bMainCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire SP-projectile. Ammo left: %d"), TankPawn->GetAmmoValue()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire SP-projectile. Ammo left: %i"), CurrentAmmo));
 		if (ProjectilePool)
 		{
 			ProjectilePool->GetProjectile(ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
 		}
 		else
 		{
-			AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
-			if (projectile)
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
+			if (Projectile)
 			{
-				projectile->Start();
+				Projectile->OnKilled.AddUObject(this, &ACannon::AddScore);
+				Projectile->SetOwner(this);
+				Projectile->Start();
 			}
 		}
 	}
 	else if (CannonType==ECannonType::FireTrace)
 	{
-		if(TankPawn->GetAmmoValue() < 10)
+		if(CurrentAmmo < 10)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Trace Fire")));
 			return;
 		}
-		TankPawn->DecreaseAmmo(10);
-		bAlternateCanFire = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire trace! Ammo left: %d"), TankPawn->GetAmmoValue()));
+		CurrentAmmo -= 10;
+		bMainCanFire = false;
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("Fire trace! Ammo left: %i"), CurrentAmmo));
 
-		FHitResult hitResult;
-		FCollisionQueryParams traceParams = FCollisionQueryParams(FName(TEXT("FireTrace")), true, this);
-		traceParams.bTraceComplex = true;
-		traceParams.bReturnPhysicalMaterial = false;
+		FHitResult HitResult;
+		FCollisionQueryParams TraceParams = FCollisionQueryParams(FName(TEXT("FireTrace")), true, this);
+		TraceParams.bTraceComplex = true;
+		TraceParams.bReturnPhysicalMaterial = false;
 
 		FVector StartTrace = ProjectileSpawnPoint->GetComponentLocation();
 		FVector EndTrace = StartTrace + ProjectileSpawnPoint->GetForwardVector() * FireRange;
 
-		if (GetWorld()->LineTraceSingleByChannel(hitResult, StartTrace, EndTrace, ECollisionChannel::ECC_Visibility, traceParams))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_Visibility, TraceParams))
 		{
-			DrawDebugLine(GetWorld(), StartTrace, hitResult.Location, FColor::Red, false, 0.5f, 0, 5);
-			if (hitResult.GetActor())
+			DrawDebugLine(GetWorld(), StartTrace, HitResult.Location, FColor::Red, false, 0.5f, 0, 5);
+			if (HitResult.GetActor())
 			{
-				hitResult.GetActor()->Destroy();
+				AActor* TraceOwner = GetOwner();
+				AActor* OwnerByOwner = TraceOwner != nullptr ? TraceOwner->GetOwner() : nullptr;
+
+				if (HitResult.GetActor() != TraceOwner && HitResult.GetActor() != OwnerByOwner)
+				{
+					IDamageTaker* DamageTakerActor = Cast<IDamageTaker>(HitResult.GetActor());
+					if (DamageTakerActor)
+					{
+						FDamageData damageData;
+						damageData.DamageValue = TraceDamage;
+						damageData.Instigator = TraceOwner;
+						damageData.DamageMaker = this;
+
+						DamageTakerActor->TakeDamage(damageData);
+					}
+				}
 			}
-		}
-		else
-		{
-			DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Purple, false, 0.5f, 0, 5);
+			else
+			{
+				DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Purple, false, 0.5f, 0, 5);
+			}
 		}
 	}
 	else if (CannonType==ECannonType::FireMultiProjectile)
 	{
-		if(TankPawn->GetAmmoValue() < 3)
+		if(CurrentAmmo < 3)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("No Ammo For Burst Fire")));
 			return;
@@ -256,9 +295,26 @@ void ACannon::CreateProjectilePool()
 		ProjectilePool = GetWorld()->SpawnActor<AProjectilePool>(ProjectilePoolClass, ProjectileSpawnPoint->GetComponentLocation(), ProjectileSpawnPoint->GetComponentRotation());
 }
 
+void ACannon::IncreaseAmmoValue(const int AmmoValue)
+{
+	CurrentAmmo += AmmoValue;
+	if (CurrentAmmo > MaxAmmo)
+	{
+		CurrentAmmo = MaxAmmo;
+	}
+}
+
+void ACannon::AddScore(float ScoreValue)
+{
+	if (ScoreChanged.IsBound())
+	{
+		ScoreChanged.Broadcast(ScoreValue);
+	}
+}
+
 void ACannon::BeginPlay()
 {
 	Super::BeginPlay();
 	CreateProjectilePool();
-	TankPawn = Cast<ATankPawn>(GetOwner());
+	CurrentAmmo = MaxAmmo;
 }

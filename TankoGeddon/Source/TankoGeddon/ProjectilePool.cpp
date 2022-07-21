@@ -3,15 +3,15 @@
 #include "ProjectilePool.h"
 #include "Projectile.h"
 
-void AProjectilePool::GetProjectile(FVector spawnLocation, FRotator spawnRotation)
+void AProjectilePool::GetProjectile(const FVector SpawnLocation, const FRotator SpawnRotation)
 {
 	bHaveActiveProjectile = false;
 	for (int32 i = 0; i < ProjectilePool.Num(); i++)
 	{
 		if (ProjectilePool[i]->bIsActivation == false)
 		{
-			ProjectilePool[i]->SetActorLocation(spawnLocation);
-			ProjectilePool[i]->SetActorRotation(spawnRotation);
+			ProjectilePool[i]->SetActorLocation(SpawnLocation);
+			ProjectilePool[i]->SetActorRotation(SpawnRotation);
 			ProjectilePool[i]->bIsActivation = true;
 			bHaveActiveProjectile = true;
 			ProjectilePool[i]->SetActorEnableCollision(true);
@@ -21,7 +21,7 @@ void AProjectilePool::GetProjectile(FVector spawnLocation, FRotator spawnRotatio
 	}
 	if (bHaveActiveProjectile == false)
 	{
-		SpawnProjectile(spawnLocation, spawnRotation, true);
+		SpawnProjectile(SpawnLocation, SpawnRotation, true);
 	}
 }
 
@@ -31,19 +31,17 @@ void AProjectilePool::BeginPlay()
 	InitializePool();
 }
 
-void AProjectilePool::SpawnProjectile(FVector SpawnLocation, FRotator SpawnRotation, bool bIsActive /*= false */)
+void AProjectilePool::SpawnProjectile(const FVector SpawnLocation, const FRotator SpawnRotation, const bool bIsActive)
 {
-	AProjectile* projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-	
-	if (projectile)
+	if (AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation))
 	{
-		ProjectilePool.Add(projectile);
-		projectile->bIsActivation = bIsActive;
-		projectile->SetActorEnableCollision(bIsActive);
+		ProjectilePool.Add(Projectile);
+		Projectile->bIsActivation = bIsActive;
+		Projectile->SetActorEnableCollision(bIsActive);
 
 		if (bIsActive)
 		{
-			projectile->Start();
+			Projectile->Start();
 		}
 	}
 }
@@ -52,6 +50,6 @@ void AProjectilePool::InitializePool()
 {
 	for (int32 i = 0; i < PoolSize; i++)
 	{
-		SpawnProjectile(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f));
+		SpawnProjectile(FVector(0.0f, 0.0f, -500.0f), FRotator(0.0f, 0.0f, 0.0f));
 	}
 }

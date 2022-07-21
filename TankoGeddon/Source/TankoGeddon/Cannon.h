@@ -10,9 +10,11 @@
 
 class AProjectilePool;
 UCLASS()
-class TANKOGEDDON_API ACannon : public AActor
+class TANKOGEDDON_API ACannon final : public AActor
 {
 	GENERATED_BODY()
+
+	DECLARE_EVENT_OneParam(ACannon, FChangeScore, float);
 	
 public:	
 	ACannon();
@@ -23,14 +25,27 @@ public:
 
 	bool IsReadyToFire() const { return bMainCanFire; };	
 	void CreateProjectilePool();
+
+	int GetCurrentAmmoValue() const { return CurrentAmmo; };
+	int GetMaxAmmoValue() const { return MaxAmmo; };
+	void IncreaseAmmoValue(const int AmmoValue);
+
+	//Score
+	float Score = 0.0f;
+
+	UFUNCTION()
+	void AddScore(float ScoreValue);
+	
+	FChangeScore ScoreChanged;
+	
 protected:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	class UStaticMeshComponent* CannonMesh;
+	UStaticMeshComponent* CannonMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	class UArrowComponent* ProjectileSpawnPoint;
+	UArrowComponent* ProjectileSpawnPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	ECannonType CannonType;
@@ -46,6 +61,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	float FireRange = 1000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	float TraceDamage = 50;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo")
+	int MaxAmmo = 120;
+
+	int CurrentAmmo;
 	
 	FTimerHandle ReloadTimer;
 	FTimerHandle BurstFireTimer;
@@ -58,10 +81,7 @@ protected:
 
 	UPROPERTY()
 	AProjectilePool* ProjectilePool;
-	
-	UPROPERTY()
-	ATankPawn* TankPawn;
-	
+		
 private:
 	bool bMainCanFire = true;
 	bool bAlternateCanFire = true;

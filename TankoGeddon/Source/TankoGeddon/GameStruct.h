@@ -31,7 +31,7 @@ struct FDamageData
 };
 
 UCLASS()
-class TANKOGEDDON_API UGameStruct : public UObject
+class TANKOGEDDON_API UGameStruct final : public UObject
 {
 	GENERATED_BODY()
 	

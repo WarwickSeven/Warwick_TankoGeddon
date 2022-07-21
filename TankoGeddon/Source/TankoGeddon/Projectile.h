@@ -7,18 +7,21 @@
 #include "Projectile.generated.h"
 
 UCLASS()
-class TANKOGEDDON_API AProjectile : public AActor
+class TANKOGEDDON_API AProjectile final : public AActor
 {
 	GENERATED_BODY()
+
+	DECLARE_EVENT_OneParam(AProjectile, FOnKill, float);
 	
 public:	
 	AProjectile();
 	void Start();
 	void Deactivate();
 	bool bIsActivation = false;
+	FOnKill OnKilled;
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Components")
-	class UStaticMeshComponent* ProjectileMesh;
+	UStaticMeshComponent* ProjectileMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	float MoveSpeed = 100.0f;
@@ -38,6 +41,6 @@ protected:
 	void Move();
 
 	UFUNCTION()
-	void OnMeshOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-		class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnMeshOverlapBegin(class UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };
